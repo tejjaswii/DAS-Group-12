@@ -1,0 +1,490 @@
+---
+title: "Data Analysis Skills - Project 2"
+author: "Group-12"
+number-sections: true
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+  pdf: default
+editor_options: 
+  chunk_output_type: console
+execute:
+  echo: false
+  eval: true
+  warning: false
+  message: false
+---
+
+# Data Wrangling {#sec-dw}
+
+```{r}
+#Loading libraries for analysis
+library(tidyverse)
+library(moderndive)
+library(gapminder)
+library(stats)
+library(readr)
+library(jtools)
+library(skimr)
+library(ggplot2)
+library(gt)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+
+#Reading the cleaned data into R
+coffee<-read_csv("df.csv")
+
+#Checking the variables in the data
+names(coffee)
+
+#Deselecting a column not required for analysis
+coffee<-coffee%>%
+  select(-...1)
+
+#Adding column for coffee quality
+coffee<-coffee%>%
+  mutate(Qualityclass=ifelse(Ql==1,"Good","Poor"))
+  
+#Renaming the columns for ease in visualisation and fitting models
+coffee<-coffee%>%
+  rename('country_of_origin'=coo,
+         'aroma'=ar,
+         'flavor'=fl,
+         'acidity'=ac,
+         'category_two_defects'=ctd,
+         'altitude_mean_meters'=amm,
+         'harvested'=ha,
+         'Qualityclass_coded'=Ql)
+
+glimpse(coffee)
+
+#Checking for missing values
+colSums(is.na(coffee))
+
+#Checking the count of categories in target variables
+coffee%>%
+  group_by(Qualityclass)%>%
+  summarise('Count'=n())
+
+names(coffee)
+
+```
+
+@sec-dw focuses on wrangling data for further exploratory and formal analysis. It checks that there are no missing found in the data following data cleaning. We also check that the target variable (Qualityclass) is not biased, that is, it is not dominated by a single category.
+
+# Exploratory Data Analysis {#sec-eda}
+
+@tbl-summary provides a detailed numerical summary for the variables of interest in our coffee quality dataset.
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-summary
+#| tbl-cap: "Summary statistics of coffee quality dataset by variables"
+
+#Numerical summary of aroma
+coffee_aroma<-coffee %>%
+  summarise('Variables'="aroma",
+            'Mean' = mean(aroma),
+            'Median' = median(aroma),
+            'St.Dev' = sd(aroma)
+            )
+
+#Numerical summary of flavor
+coffee_flavor <- coffee %>%
+  summarise('Variables'="flavor",
+            'Mean' = mean(flavor),
+            'Median' = median(flavor),
+            'St.Dev' = sd(flavor)
+            )
+
+#Numerical summary of acidity
+coffee_acidity <- coffee %>%
+  summarise('Variables'="acidity",
+            'Mean' = mean(acidity),
+            'Median' = median(acidity),
+            'St.Dev' = sd(acidity)
+            )
+
+#Numerical summary of category_two_defects
+coffee_category_two_defects <- coffee %>%
+  summarise('Variables'="defects",
+            'Mean' = mean(category_two_defects),
+            'Median' = median(category_two_defects),
+            'St.Dev' = sd(category_two_defects)
+            )
+
+#Numerical summary of altitude_mean_meters
+coffee_altitude_mean_meters <- coffee %>%
+  summarise('Variables'="altitude",
+            'Mean' = mean(altitude_mean_meters),
+            'Median' = median(altitude_mean_meters),
+            'St.Dev' = sd(altitude_mean_meters)
+            )
+
+#Combined numerical summary of all variables
+combined_summary <- bind_rows(coffee_aroma, coffee_flavor, coffee_acidity, coffee_category_two_defects, coffee_altitude_mean_meters)
+combined_summary |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Variables=html("Variables"),
+    Mean = html("Mean"),
+    Median = html("Median"),
+    St.Dev = html("Std. Dev")
+  )
+```
+
+We further look at categorical numerical summary for each varible in the following tables:
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-aroma_summary
+#| tbl-cap: "Summary statistics for aroma by quality of coffee"
+
+aroma_table<-coffee %>%
+  summarise('Mean' = mean(aroma),
+            'Median' = median(aroma),
+            'St.Dev' = sd(aroma),
+            'Min' = min(aroma),
+            'Max' = max(aroma),
+            'IQR' = quantile(aroma,0.75)-quantile(aroma,0.25),
+            .by=Qualityclass)
+aroma_table|>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+```
+
+In @tbl-aroma_summary we observe that mean and median value of aroma are higher for coffee classified as good compared to those classified as poor. The observed variation in standard deviation in the two categories, Good with 0.23 and Poor with 0.43, suggests there is more variability in based on aroma in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-flavor_summary
+#| tbl-cap: "Summary statistics for flavor by quality of coffee"
+
+flavor_table<-coffee %>%
+  summarise('Mean' = mean(flavor),
+            'Median' = median(flavor),
+            'St.Dev' = sd(flavor),
+            'Min' = min(flavor),
+            'Max' = max(flavor),
+            'IQR' = quantile(flavor,0.75)-quantile(flavor,0.25),
+            .by=Qualityclass)
+flavor_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-acidity_summary
+#| tbl-cap: "Summary statistics for acidity by quality of coffee"
+
+acidity_table<-coffee %>%
+  summarise('Mean' = mean(acidity),
+            'Median' = median(acidity),
+            'St.Dev' = sd(acidity),
+            'Min' = min(acidity),
+            'Max' = max(acidity),
+            'IQR' = quantile(acidity,0.75)-quantile(acidity,0.25),
+            .by=Qualityclass)
+acidity_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-category_two_defects_summary
+#| tbl-cap: "Summary statistics for category two defects by quality of coffee"
+
+category_two_defects_table<-coffee %>%
+  summarise('Mean' = mean(category_two_defects),
+            'Median' = median(category_two_defects),
+            'St.Dev' = sd(category_two_defects),
+            'Min' = min(category_two_defects),
+            'Max' = max(category_two_defects),
+            'IQR' = quantile(category_two_defects,0.75)-quantile(category_two_defects,0.25),
+            .by=Qualityclass)
+category_two_defects_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: tbl-altitude_mean_metres_summary
+#| tbl-cap: "Summary statistics for mean altitude (metres) by quality of coffee"
+
+altitude_mean_meters_table<-coffee %>%
+  summarise('Mean' = mean(altitude_mean_meters),
+            'Median' = median(altitude_mean_meters),
+            'St.Dev' = sd(altitude_mean_meters),
+            'Min' = min(altitude_mean_meters),
+            'Max' = max(altitude_mean_meters),
+            'IQR' = quantile(altitude_mean_meters,0.75)-quantile(altitude_mean_meters,0.25),
+            .by=Qualityclass)
+altitude_mean_meters_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+To further extend our analysis, we visualise our variables of interest.
+
+# Country of origin
+
+```{r}
+country_quality_summary <- coffee%>%
+  group_by(country_of_origin, Qualityclass)%>%
+  summarise(Count = n())%>%
+  pivot_wider(names_from = Qualityclass, values_from = Count, values_fill = 0)
+country_quality_summary
+```
+
+```{r}
+ggplot(coffee, aes(x = country_of_origin, fill = Qualityclass))+
+  geom_bar()+
+  labs(x = "Coffee Quality", y = "Count", fill = "Country of Origin", 
+       title = "Distribution of Coffee Quality by Country of Origin")
+```
+
+ADD INTERPRETATION
+
+# Aroma
+
+@fig-aroma_boxplot displays the distribution of coffee aroma based on coffee quality.
+
+```{r}
+#Exploring relationship between aroma and coffee quality (target variable)
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality with outliers")
+```
+
+It can be observed in @fig-aroma_boxplot1 that due to presence of a large number of outliers in the data this could be due to a small sample size. It is difficult to derive meaningful insights from the boxplot. Hence, these outliers should dealt with caution as generalised linear models are sensitive to them. It would make sense to exclude outliers from data if there a only a few of them, so, we can focus on dealing with extreme outliers given our small sample size.
+
+```{r}
+#Finding outlier value
+min(coffee$aroma)
+
+#Checking index of outlier
+which.min(coffee$aroma)
+
+#Confirming the number of times outlier occurs
+coffee%>%
+  filter(aroma==0 & Qualityclass_coded==0) #remove 55
+
+#removing 55
+coffee<-coffee[-55, ]
+```
+
+After removing the outlier of concern we observe the following boxplot as shown in @fig-aroma_boxplot2.
+
+```{r}
+#Checking the plot again for exploration         
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality without many outliers")
+
+#Finding another outlier value
+min(coffee$aroma)
+
+#Checking index of outlier
+which.min(coffee$aroma)
+
+#Confirming the number of times outlier occurs
+coffee%>%
+  filter(aroma==5.08 & Qualityclass_coded==0) 
+
+#removing 171
+coffee<-coffee[-171, ]
+
+#Checking the plot again for exploration         
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality without many outliers")
+```
+
+In @fig-aroma_boxplot2 we observe removing very few extreme outliers  has helped in analysing the distribution of coffee aroma as it has removed most of the outliers in grouped data. The very few outliers left in the data (closer to minimum value) can be due to a small sample size.
+
+The interesting observation to make from @fig-aroma_boxplot2 is that coffee with higher aroma score are found to be consistently better than coffee with lower aroma score.
+
+# Flavor
+
+```{r}
+#Exploring relationship between flavor and coffee quality (target variable)
+ggplot(coffee,aes(x=Qualityclass,y=flavor,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Flavor",
+       title= "Relationship between coffee flavor and coffee quality with outliers")
+```
+
+ADD INTERPRETATION
+
+# Acidity
+
+```{r}
+ggplot(coffee,aes(x=Qualityclass,y=acidity,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Qualtiy",y="Coffee Acidity",
+       title="Relationship between coffee acidity and coffee quality with outliers")
+
+which.min(coffee$acidity)
+
+min(coffee$acidity)
+
+coffee%>%
+  filter(acidity==5.25 & Qualityclass_coded==0)
+
+coffee<-coffee[-354, ]
+
+ggplot(coffee,aes(x=Qualityclass,y=acidity,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Qualtiy",y="Coffee Acidity",
+       title="Relationship between coffee acidity and coffee quality with outliers")
+```
+
+ADD INTERPRETATION
+
+# Category two defects
+
+```{r}
+ggplot(coffee,aes(x=Qualityclass,y=category_two_defects))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Category Two Defects",
+       title="Relationship between category defects and coffee quality with outliers")
+```
+
+```{r}
+#Checking distibution of values in the variable
+coffee%>%
+  group_by(category_two_defects)%>%
+  summarise("Count"=n())
+
+#Can remove as doesn't provide significant difference in categories due to uneven distribution of values.
+```
+
+After looking at @defects_boxplot1 we can observe that there are a lot of outliers present in the variable which could be skewing the distribution, however removing these outliers or substituting with median can be risky given the uneven distribution of values within the variable. Hence, we can consider removing the variable.
+
+# Altitude
+
+```{r}
+ggplot(coffee,aes(x=Qualityclass,y=altitude_mean_meters))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Mean Altitude (metres)",
+       title="Relationship between altitude and coffee quality with outliers")
+```
+
+ADD INTERPRETATION
+
+```{r}
+summary(coffee$altitude_mean_meters)
+
+which.max(coffee$altitude_mean_meters)
+
+coffee%>%
+  filter(altitude_mean_meters==190164 & Qualityclass_coded==0)
+
+#First outlier from altitude 
+which.max(coffee$altitude_mean_meters)
+
+#First outlier from altitude removed
+coffee<-coffee[-502, ]
+
+#Second outlier from altitude
+which.max(coffee$altitude_mean_meters)
+
+#Second outlier from altitude removed
+coffee<-coffee[-529, ]
+
+#One more outlier of concern
+
+#Third outlier from altitude
+which.max(coffee$altitude_mean_meters)
+
+#Checking number of outliers 
+coffee%>%
+  filter(altitude_mean_meters==110000  & Qualityclass_coded==0)
+
+#Removing third outlier
+coffee<-coffee[-370, ]
+```
+
+ADD INTERPRETATION
+
+```{r}
+ggplot(coffee,aes(x=Qualityclass,y=altitude_mean_meters,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Mean Altitude (metres)",
+       title="Relationship between altitude and coffee quality without many outliers")
+```
+
+ADD INTERPRETATION
+
+# Harvested
+
+```{r}
+ggplot(coffee,aes(x=Qualityclass,y=harvested))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Harvest Year")
+
+#No outliers
+#Can remove as doesn't help much in evaluating the difference between two categories
+```
+
+ADD INTERPRETATION
+
+```{r}
+write.csv(coffee,file="C:/Users/TEJASWI/Desktop/DAS Project 2/coffee.csv")
+```
