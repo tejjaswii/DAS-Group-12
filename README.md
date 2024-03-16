@@ -23,7 +23,7 @@ The `Qualityclass` serves as the response variable, with a binary outcome indica
 
 
 ## Repository Structure
-- `/data`: This directory contains the datasets used in the analysis.
+- `dataset12.csv`: This directory contains the datasets used in the analysis.
 - `/scripts`: This directory contains the R scripts for the GLM analysis.
 - `/results`: This directory will store the output of the analyses, including figures and tables.
 - `README.md`: Provides an overview and instructions for this repository.
