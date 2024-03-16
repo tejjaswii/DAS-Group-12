@@ -1,48 +1,19 @@
-# Coffee Quality Analysis Project
+# Exploratory Data Analysis Branch
 
 ## Overview
-This project is dedicated to analyzing the factors affecting coffee quality. Utilizing data from the Coffee Quality Database (CQD), we aim to investigate how different features of coffee batches contribute to the overall quality classification as either good (score >= 82.5) or poor (score < 82.5).
+The Exploratory Data Analysis (EDA) branch hosts scripts and notebooks that provide an initial look at the data, using various statistical and visualization techniques to uncover patterns, spot anomalies, and test hypotheses.
 
-## Data Source
-The datasets used in this analysis come from the Coffee Quality Database (CQD), provided by the Coffee Quality Institute, a non-profit organization. The datasets include various attributes related to coffee production and quality assessment.
+## Activities
+- Visualizing the distribution of individual variables.
+- Exploring the relationships between different variables.
+- Identifying patterns that might warrant further analysis or inform model selection.
 
-## Variables
-The analysis focuses on the following attributes for each coffee batch:
-- `country_of_origin`: The country where the coffee originates.
-- `aroma`: Aroma grade of the coffee batch.
-- `flavor`: Flavor grade of the coffee batch.
-- `acidity`: Acidity grade of the coffee batch.
-- `category_two_defects`: Count of category 2 defects in the coffee batch.
-- `altitude_mean_meters`: Mean altitude of the grower's farm.
-- `harvested`: Harvest year of the coffee batch.
-- `Qualityclass`: Quality classification based on the score.
+## Scripts and Notebooks
+- `EDA_Project2.qmd`: Contains code for performing initial statistical testing and generating various graphs and charts to explore data.
 
-## Methodology
-After completing data cleaning, we conducted exploratory data analysis (EDA) and then used generalized linear models (GLM) to analyze the impact of various factors on coffee quality.
-The `Qualityclass` serves as the response variable, with a binary outcome indicating whether the quality of coffee is good or poor.
+## How to Use
+To conduct EDA, run the scripts provided, which will generate outputs in the form of graphs and tables.
 
+## Contribution
+Insights from EDA can be highly valuable. If you have conducted additional analysis or created informative visualizations, please share them by submitting a pull request to this branch.
 
-## Repository Structure
-- `dataset12.csv`: This directory contains the datasets used in the analysis.
-- `/scripts`: This directory contains the R scripts for the GLM analysis.
-- `/results`: This directory will store the output of the analyses, including figures and tables.
-- `README.md`: Provides an overview and instructions for this repository.
-
-## Getting Started
-To run the analysis, follow these steps:
-1. Clone this repository to your local machine.
-2. Make sure R and the necessary packages (`tidyverse`, `MASS`, etc.) are installed.
-3. Run the scripts located in the `/scripts` directory.
-
-## How to Contribute
-Contributions to this project are welcome! To contribute, please:
-1. Fork the repository.
-2. Create a new branch for your feature.
-3. Add your feature or enhancement.
-4. Submit a pull request.
-
-## License
-This project is open source and available under the [MIT License](LICENSE).
-
-## Contact
-For any questions or comments, please open an issue in this repository or contact the repository maintainer directly.
