@@ -23,9 +23,10 @@ The `Qualityclass` serves as the response variable, with a binary outcome indica
 
 
 ## Repository Structure
-- `dataset12.csv`: This directory contains the datasets used in the analysis.
-- `/scripts`: This directory contains the R scripts for the GLM analysis.
-- `/results`: This directory will store the output of the analyses, including figures and tables.
+- `dataset12.csv`: This contains the datasets used in the analysis.
+- `Data_Cleaning.qmd`: This contains the R script for the Data Cleaning.
+- `Exploratory_Analysis.qmd`: This contains the R scripts for the Exploratory Analysis.
+- `Formal_Analysis.qmd`: This contains the R scripts for the GLM analysis.
 - `README.md`: Provides an overview and instructions for this repository.
 
 ## Getting Started
@@ -40,9 +41,6 @@ Contributions to this project are welcome! To contribute, please:
 2. Create a new branch for your feature.
 3. Add your feature or enhancement.
 4. Submit a pull request.
-
-## License
-This project is open source and available under the [MIT License](LICENSE).
 
 ## Contact
 For any questions or comments, please open an issue in this repository or contact the repository maintainer directly.
