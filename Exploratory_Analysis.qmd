@@ -205,6 +205,7 @@ acidity_table<-coffee %>%
             'Max' = max(acidity),
             'IQR' = quantile(acidity,0.75)-quantile(acidity,0.25),
             .by=Qualityclass)
+
 acidity_table |>
   gt() |>
   fmt_number(decimals=2) |>
@@ -463,7 +464,7 @@ From the @fig-acidity_boxplot2, it seems that the median acidity is slightly hig
 #| label: fig-defects_boxplot1
 #| fig-cap: Relationship between defects and quality 
 
-ggplot(coffee,aes(x=Qualityclass,y=category_two_defects))+
+ggplot(coffee,aes(x=Qualityclass,y=category_two_defects,fill=Qualityclass))+
   geom_boxplot()+
   labs(x="Coffee Quality",y="Category Two Defects",
        title="Relationship between category defects and coffee quality with outliers")
@@ -552,9 +553,10 @@ After careful data cleaning and removal of a number of significant outliers, the
 #| label: fig-harvest_boxplot1
 #| fig-cap: Relationship between harvest year and coffee quality  
 
-ggplot(coffee,aes(x=Qualityclass,y=harvested))+
+ggplot(coffee,aes(x=Qualityclass,y=harvested,fill=Qualityclass))+
   geom_boxplot()+
-  labs(x="Coffee Quality",y="Harvest Year")
+  labs(x="Coffee Quality",y="Harvest Year",
+       title="Relationship between Harvest Year and Coffee Quality")
 
 #No outliers
 #Can remove as doesn't help much in evaluating the difference between two categories
