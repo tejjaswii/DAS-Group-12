@@ -9,7 +9,7 @@ This branch contains the work related to the formal statistical analysis of the 
 - Performing model diagnostics and validation.
 
 ## Scripts
-- `GLM_Project2.qmd`: The script for conducting GLM analysis on the cleaned data.
+- `Formal_Analysis.qmd`: The script for conducting GLM analysis on the cleaned data.
 
 ## Results
 The results folder contains:
@@ -18,7 +18,7 @@ The results folder contains:
 - Validation metrics and interpretation.
 
 ## How to Use
-Execute the `glm_analysis.R` script to replicate the analysis. Make sure to adjust any file paths as needed.
+Execute the `Formal_Analysis.qmd` script to replicate the analysis. Make sure to adjust any file paths as needed.
 
 ## Contribution
 To contribute to the formal analysis, please ensure that suggestions or changes are backed by statistical reasoning. Submit a pull request with a clear explanation of your proposed changes.
