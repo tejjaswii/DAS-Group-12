@@ -1,0 +1,570 @@
+---
+title: "Data Analysis Skills: Analysis of Coffee Quality"
+author: "Group-12: Tejaswi, Xinjing LI, Xinran Chang, Yalin LIANG, Yousef Mohammed"
+number-sections: true
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+  pdf: default
+editor_options: 
+  chunk_output_type: console
+execute:
+  echo: true
+  eval: true
+  warning: false
+  message: false
+---
+
+# Data Wrangling {#sec-dw}
+
+```{r}
+#Loading libraries for analysis
+library(tidyverse)
+library(moderndive)
+library(gapminder)
+library(stats)
+library(readr)
+library(jtools)
+library(skimr)
+library(ggplot2)
+library(gt)
+```
+
+```{r}
+#Reading the cleaned data into R
+coffee<-read_csv("df.csv")
+
+#Checking the variables in the data
+names(coffee)
+
+#Deselecting a column not required for analysis
+coffee<-coffee%>%
+  select(-...1)
+
+#Adding column for coffee quality
+coffee<-coffee%>%
+  mutate(Qualityclass=ifelse(Ql==1,"Good","Poor"))
+  
+#Renaming the columns for ease in visualisation and fitting models
+coffee<-coffee%>%
+  rename('country_of_origin'=coo,
+         'aroma'=ar,
+         'flavor'=fl,
+         'acidity'=ac,
+         'category_two_defects'=ctd,
+         'altitude_mean_meters'=amm,
+         'harvested'=ha,
+         'Qualityclass_coded'=Ql)
+
+#Viewing the dataset
+glimpse(coffee)
+
+#Checking for missing values
+colSums(is.na(coffee))
+
+#Checking the count of categories in target variables
+coffee%>%
+  group_by(Qualityclass)%>%
+  summarise('Count'=n())
+
+#Name of the columns
+names(coffee)
+
+```
+
+@sec-dw focuses on wrangling data for further exploratory and formal analysis. It checks that there are no missing found in the data following data cleaning. We also check that the target variable (Qualityclass) is not biased, that is, it is not dominated by a single category.
+
+# Exploratory Data Analysis {#sec-eda}
+
+@tbl-summary provides a detailed numerical summary for the variables of interest in our coffee quality dataset.
+
+```{r}
+#| label: tbl-summary
+#| tbl-cap: "Summary statistics of coffee quality dataset by variables"
+
+#Numerical summary of aroma
+coffee_aroma<-coffee %>%
+  summarise('Variables'="aroma",
+            'Mean' = mean(aroma),
+            'Median' = median(aroma),
+            'St.Dev' = sd(aroma)
+            )
+
+#Numerical summary of flavor
+coffee_flavor <- coffee %>%
+  summarise('Variables'="flavor",
+            'Mean' = mean(flavor),
+            'Median' = median(flavor),
+            'St.Dev' = sd(flavor)
+            )
+
+#Numerical summary of acidity
+coffee_acidity <- coffee %>%
+  summarise('Variables'="acidity",
+            'Mean' = mean(acidity),
+            'Median' = median(acidity),
+            'St.Dev' = sd(acidity)
+            )
+
+#Numerical summary of category_two_defects
+coffee_category_two_defects <- coffee %>%
+  summarise('Variables'="defects",
+            'Mean' = mean(category_two_defects),
+            'Median' = median(category_two_defects),
+            'St.Dev' = sd(category_two_defects)
+            )
+
+#Numerical summary of altitude_mean_meters
+coffee_altitude_mean_meters <- coffee %>%
+  summarise('Variables'="altitude",
+            'Mean' = mean(altitude_mean_meters),
+            'Median' = median(altitude_mean_meters),
+            'St.Dev' = sd(altitude_mean_meters)
+            )
+
+#Combined numerical summary of all variables
+combined_summary <- bind_rows(coffee_aroma, coffee_flavor, coffee_acidity,
+                              coffee_category_two_defects, 
+                              coffee_altitude_mean_meters)
+combined_summary |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Variables=html("Variables"),
+    Mean = html("Mean"),
+    Median = html("Median"),
+    St.Dev = html("Std. Dev")
+  )
+```
+
+We further look at categorical numerical summary for each varible in the following tables:
+
+```{r}
+#| label: tbl-aroma_summary
+#| tbl-cap: "Summary statistics for aroma by quality of coffee"
+
+aroma_table<-coffee %>%
+  summarise('Mean' = mean(aroma),
+            'Median' = median(aroma),
+            'St.Dev' = sd(aroma),
+            'Min' = min(aroma),
+            'Max' = max(aroma),
+            'IQR' = quantile(aroma,0.75)-quantile(aroma,0.25),
+            .by=Qualityclass)
+aroma_table|>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+```
+
+In @tbl-aroma_summary we observe that mean and median value of aroma are higher for coffee classified as good compared to those classified as poor. The observed variation in standard deviation in the two categories, Good with 0.23 and Poor with 0.43, suggests there is more variability based on aroma in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| label: tbl-flavor_summary
+#| tbl-cap: "Summary statistics for flavor by quality of coffee"
+
+flavor_table<-coffee %>%
+  summarise('Mean' = mean(flavor),
+            'Median' = median(flavor),
+            'St.Dev' = sd(flavor),
+            'Min' = min(flavor),
+            'Max' = max(flavor),
+            'IQR' = quantile(flavor,0.75)-quantile(flavor,0.25),
+            .by=Qualityclass)
+flavor_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+In @tbl-flavor_summary we observe that mean and median value of flavor are higher for coffee classified as good compared to those classified as poor. The observed variation in standard deviation in the two categories, Good with 0.23 and Poor with 0.43, suggests there is more variability based on flavor in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| label: tbl-acidity_summary
+#| tbl-cap: "Summary statistics for acidity by quality of coffee"
+
+acidity_table<-coffee %>%
+  summarise('Mean' = mean(acidity),
+            'Median' = median(acidity),
+            'St.Dev' = sd(acidity),
+            'Min' = min(acidity),
+            'Max' = max(acidity),
+            'IQR' = quantile(acidity,0.75)-quantile(acidity,0.25),
+            .by=Qualityclass)
+acidity_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+In @tbl-acidity_summary we observe that mean and median value of acidity are higher for coffee classified as good compared to those classified as poor. The observed variation in standard deviation in the two categories, Good with 0.26 and Poor with 0.42, suggests there is more variability based on acidity in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| label: tbl-category_two_defects_summary
+#| tbl-cap: "Summary statistics for category two defects by quality of coffee"
+
+category_two_defects_table<-coffee %>%
+  summarise('Mean' = mean(category_two_defects),
+            'Median' = median(category_two_defects),
+            'St.Dev' = sd(category_two_defects),
+            'Min' = min(category_two_defects),
+            'Max' = max(category_two_defects),
+            'IQR' = quantile(category_two_defects,0.75)-
+              quantile(category_two_defects,0.25),
+            .by=Qualityclass)
+category_two_defects_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+In @tbl-category_two_defects_summary we observe that mean value of defects are higher for coffee classified as poor compared to those classified as good. However, the median is same for both categories. This peculiar distibution could be due to the presence of influential outliers. The observed variation in standard deviation in the two categories, Good with 4.27 and Poor with 6.32, suggests there is more variability based on acidity in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| label: tbl-altitude_mean_metres_summary
+#| tbl-cap: "Summary statistics for mean altitude (metres) by quality of coffee"
+
+altitude_mean_meters_table<-coffee %>%
+  summarise('Mean' = mean(altitude_mean_meters),
+            'Median' = median(altitude_mean_meters),
+            'St.Dev' = sd(altitude_mean_meters),
+            'Min' = min(altitude_mean_meters),
+            'Max' = max(altitude_mean_meters),
+            'IQR' = quantile(altitude_mean_meters,0.75)-
+              quantile(altitude_mean_meters,0.25),
+            .by=Qualityclass)
+altitude_mean_meters_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+
+```
+
+In @tbl-altitude_mean_metres_summary we observe that mean value of altitude are higher for coffee classified as poor compared to those classified as good. However, the median is same for both categories. This peculiar distibution could be due to the presence of influential outliers. The observed variation in standard deviation in the two categories, Good with 403.61 and Poor with 12,634.79, suggests there is more variability based on acidity in coffee under poor category as compared to coffee under good category. This can also be observed in the difference in the interquartile range for the two categories.
+
+```{r}
+#| label: tbl-harvested_summary
+#| tbl-cap: "Summary statistics for harvest year by quality of coffee"
+
+harvested_table<-coffee %>%
+  summarise('Mean' = mean(harvested),
+            'Median' = median(harvested),
+            'St.Dev' = sd(harvested),
+            'Min' = min(harvested),
+            'Max' = max(harvested),
+            'IQR' = quantile(harvested,0.75)-quantile(harvested,0.25),
+            .by=Qualityclass)
+harvested_table |>
+  gt() |>
+  fmt_number(decimals=2) |>
+  cols_label(
+    Median = html("Median"),
+    St.Dev = html("Std. Dev"),
+    Min = html("Minimum"),
+    Max = html("Maximum"),
+    IQR = html("Interquartile Range"),
+  )
+```
+
+In @tbl-harvested_summary we observe that mean and median value of harvest year are same for coffee classified as poor compared to those classified as good. The observed variation in standard deviation in the two categories is also approximately similar, Good with 1.76 and Poor with 1.72. This can also be observed in the difference in the interquartile range for the two categories. Thus, it can be observed that harvest year does not help in differetiating between Good or Poor coffee quality.
+
+To further extend our analysis, we visualise our variables of interest.
+
+# Country of origin
+
+```{r}
+#Looking at country of origin
+country_quality_summary <- coffee%>%
+  group_by(country_of_origin,Qualityclass)%>%
+  summarise(Count = n())%>%
+  pivot_wider(names_from = Qualityclass, values_from = Count, values_fill = 0)
+country_quality_summary
+```
+
+```{r}
+#| label: fig-stacked_bar
+#| fig-cap: Distribution of Coffee Quality by Country of Origin
+
+#Country of origin distribution
+ggplot(coffee, aes(x = country_of_origin, fill = Qualityclass))+
+  geom_bar()+
+  labs(x = "Coffee Quality", y = "Number", fill = "Country of Origin", 
+       title = "Distribution of Coffee Quality by Country")+
+  coord_flip()
+```
+
+@fig-stacked_bar shows that the distribution of coffee quality in different countries of origin. The quantity of coffee produced varies considerably between countries. Some countries produce as much "good" quality coffee as "poor" quality coffee, while others produce more or less.
+
+# Aroma and Coffee Quality
+
+@fig-aroma_boxplot1 displays the distribution of coffee aroma based on coffee quality.
+
+```{r}
+#| label: fig-aroma_boxplot1
+#| fig-cap: Relationship between coffee aroma and coffee quality with outliers
+
+#Exploring relationship between aroma and coffee quality (target variable)
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality with outliers")
+```
+
+It can be observed in @fig-aroma_boxplot1 that due to presence of a large number of outliers in the data this could be due to a small sample size. It is difficult to derive meaningful insights from the boxplot. Hence, these outliers should dealt with caution as generalised linear models are sensitive to them. It would make sense to exclude outliers from data if there a only a few of them, so, we can focus on dealing with extreme outliers given our small sample size.
+
+```{r}
+#Finding outlier value
+min(coffee$aroma)
+
+#Checking index of outlier
+which.min(coffee$aroma)
+
+#Confirming the number of times outlier occurs
+coffee%>%
+  filter(aroma==0 & Qualityclass_coded==0) #remove 55
+
+#removing 55
+coffee<-coffee[-55, ]
+```
+
+After removing the outlier of concern we observe the following boxplot as shown in @fig-aroma_boxplot2.
+
+```{r}
+#| label: fig-aroma_boxplot2
+#| fig-cap: Relationship between coffee aroma and quality without many outliers
+
+#Checking the plot again for exploration         
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality without many outliers")
+
+#Finding another outlier value
+min(coffee$aroma)
+
+#Checking index of outlier
+which.min(coffee$aroma)
+
+#Confirming the number of times outlier occurs
+coffee%>%
+  filter(aroma==5.08 & Qualityclass_coded==0) 
+
+#removing 171
+coffee<-coffee[-171, ]
+
+```
+
+```{r}
+#| label: fig-aroma_boxplot3
+#| fig-cap: Relationship between coffee aroma and quality without extreme outliers
+
+#Checking the plot again for exploration         
+ggplot(coffee,aes(x=Qualityclass,y=aroma,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Aroma",
+       title= "Relationship between coffee aroma and coffee quality without many outliers")
+```
+
+In @fig-aroma_boxplot3 we observe removing very few extreme outliers  has helped in analysing the distribution of coffee aroma as it has removed most of the outliers in grouped data. The very few outliers left in the data (closer to minimum value) can be due to a small sample size.
+
+The interesting observation to make from @fig-aroma_boxplot3 is that coffee with higher aroma score are found to be consistently better than coffee with lower aroma score.
+
+# Flavor and Coffee Quality
+
+```{r}
+#| label: fig-flavor_boxplot1
+#| fig-cap: Relationship between coffee flavor and coffee quality 
+
+#Exploring relationship between flavor and coffee quality (target variable)
+ggplot(coffee,aes(x=Qualityclass,y=flavor,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Coffee Flavor",
+       title= "Relationship between coffee flavor and coffee quality")
+```
+
+In @fig-flavor_boxplot1 the median flavor score for "Good" quality coffee is slightly higher than for "Poor" quality coffee. At the same time, the flavor score distribution of "Good" quality coffee is more concentrated than that of "Poor" quality coffee, that is, the box is shorter. Additionally, both qualities of coffee have a significant number of outliers in their flavor scores, especially the Poor quality coffee, which has outliers spanning a large range.
+
+# Acidity and Coffee Quality
+
+```{r}
+#| label: fig-acidity_boxplot1
+#| fig-cap: Relationship between coffee acidity and coffee quality with outliers
+
+ggplot(coffee,aes(x=Qualityclass,y=acidity,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Qualtiy",y="Coffee Acidity",
+       title="Relationship between coffee acidity and coffee quality with outliers")
+
+#Looking for outlier index
+which.min(coffee$acidity)
+
+#Extracting the observation
+min(coffee$acidity)
+
+#Checking number of occurences of outlier
+coffee%>%
+  filter(acidity==5.25 & Qualityclass_coded==0)
+
+#Removing outlier
+coffee<-coffee[-354, ]
+
+```
+
+```{r}
+#| label: fig-acidity_boxplot2
+#| fig-cap: Relationship between coffee acidity and  quality without extreme outliers
+
+#Relationship between coffee acidity and coffee quality without extreme outliers
+ggplot(coffee,aes(x=Qualityclass,y=acidity,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Qualtiy",y="Coffee Acidity",
+       title="Relationship between coffee acidity and coffee quality without outliers")
+```
+
+From the @fig-acidity_boxplot2, it seems that the median acidity is slightly higher for 'Good' quality coffee than for 'Poor' quality. However, there's substantial overlap in the IQR of the two quality classes, indicating variability within each group. Additionally, both categories exhibit a number of outliers, with the 'Poor' quality coffee showing a wider spread of acidity scores that deviate from the median.
+
+# Category two defects and Coffee Quality
+
+```{r}
+#| label: fig-defects_boxplot1
+#| fig-cap: Relationship between defects and quality 
+
+ggplot(coffee,aes(x=Qualityclass,y=category_two_defects))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Category Two Defects",
+       title="Relationship between category defects and coffee quality with outliers")
+```
+
+```{r}
+#Checking distibution of values in the variable
+coffee%>%
+  group_by(category_two_defects)%>%
+  summarise("Count"=n())
+
+#Can remove as doesn't provide significant difference in categories due to uneven distribution of values.
+```
+
+After looking at @fig-defects_boxplot1 we can observe that there are a lot of outliers present in the variable which could be skewing the distribution, however removing these outliers or substituting with median can be risky given the uneven distribution of values within the variable. The distribution between categories is also peculiar. Hence, we can consider removing the variable.
+
+# Altitude and Coffee Quality
+
+```{r}
+#| label: fig-altitude_boxplot1
+#| fig-cap: Relationship between coffee altitude and quality with extreme outliers
+
+#Visualising mean altitdue distribution
+ggplot(coffee,aes(x=Qualityclass,y=altitude_mean_meters))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Mean Altitude (metres)",
+       title="Relationship between altitude and coffee quality with extreme outliers")
+```
+
+Accoding to @fig-altitude_boxplot1, both 'Good' and 'Poor' quality categories have very short boxes,which suggests low variability in altitude within each quality group.There are outliers in "poor" at very high altitudes.
+
+```{r}
+#Looking at summary of altitude
+summary(coffee$altitude_mean_meters)
+
+#Extarting outlier index
+which.max(coffee$altitude_mean_meters)
+
+#Checking number of occurences of the extreme outlier
+coffee%>%
+  filter(altitude_mean_meters==190164 & Qualityclass_coded==0)
+
+#First outlier from altitude 
+which.max(coffee$altitude_mean_meters)
+
+#First outlier from altitude removed
+coffee<-coffee[-502, ]
+
+#Second outlier from altitude
+which.max(coffee$altitude_mean_meters)
+
+#Second outlier from altitude removed
+coffee<-coffee[-529, ]
+
+#One more outlier of concern
+
+#Third outlier from altitude
+which.max(coffee$altitude_mean_meters)
+
+#Checking number of outliers 
+coffee%>%
+  filter(altitude_mean_meters==110000  & Qualityclass_coded==0)
+
+#Removing third outlier
+coffee<-coffee[-370, ]
+```
+
+This code cleans up the dataset by identifying and removing outliers (outliers) in the altitude_mean_meters field. Removing or dealing with outliers can help improve the accuracy of the analysis and the performance of the model, as these outliers can distort the overall distribution of the data and the results of the analysis.
+
+```{r}
+#| label: fig-altitude_boxplot2
+#| fig-cap: Relationship between coffee altitude and quality without extreme outliers
+
+#visualising outliers in altitude
+ggplot(coffee,aes(x=Qualityclass,y=altitude_mean_meters,fill=Qualityclass))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Mean Altitude (metres)",
+       title="Relationship between altitude and coffee quality without extreme outliers")
+```
+
+After careful data cleaning and removal of a number of significant outliers, the @fig-altitude_boxplot2 was again plotted to show that the overall distribution of elevations did not change significantly from when the outliers were previously included. This suggests that despite the outlier removal, the effect of these outliers on the central tendency and dispersion of the elevation data may be limited.
+
+# Harvest and Coffee Quality
+
+```{r}
+#| label: fig-harvest_boxplot1
+#| fig-cap: Relationship between harvest year and coffee quality  
+
+ggplot(coffee,aes(x=Qualityclass,y=harvested))+
+  geom_boxplot()+
+  labs(x="Coffee Quality",y="Harvest Year")
+
+#No outliers
+#Can remove as doesn't help much in evaluating the difference between two categories
+```
+
+From @fig-harvest_boxplot1, it can be observed that the median of harvest years for both quality categories is close to that of 2014. The interquartile range of harvest years seems to be slightly wider for "good" quality coffee and more concentrated for "poor" quality. The overall range of harvest years (from lowest to highest) is similar in both classifications, roughly from 2012 to 2018. No outliers are evident in @fig-harvest_boxplot1.
+
+It can be inferred from this @fig-harvest_boxplot1 that although the distribution of harvest years is slightly different between "good" and "poor" quality coffees, the difference in harvest years between the two groups is not significant, which is why the formal analysis can consider removing this variable.
+
+```{r}
+#Writing the transformed data for Formal Analysis
+write.csv(coffee,file="C:/Users/TEJASWI/Desktop/DAS Project 2/coffee.csv")
+```
