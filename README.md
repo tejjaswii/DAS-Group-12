@@ -9,7 +9,7 @@ The Exploratory Data Analysis (EDA) branch hosts scripts and notebooks that prov
 - Identifying patterns that might warrant further analysis or inform model selection.
 
 ## Scripts and Notebooks
-- `EDA_Project2.qmd`: Contains code for performing initial statistical testing and generating various graphs and charts to explore data.
+- `Exploratory_Analysis.qmd`: Contains code for performing initial statistical testing and generating various graphs and charts to explore data.
 
 ## How to Use
 To conduct EDA, run the scripts provided, which will generate outputs in the form of graphs and tables.
