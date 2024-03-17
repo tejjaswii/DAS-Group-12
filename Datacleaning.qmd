@@ -1,0 +1,100 @@
+---
+title: "DATA12,coding and cleaning"
+format: html
+editor: visual
+---
+
+
+```{r libraries and read}
+
+install.packages("glimpse", repos = "https://cran.rstudio.com")
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
+
+library(tidyverse)
+library(writexl)
+library(reshape2)
+library(corrplot)
+install.packages("glimpse")
+library(dplyr)
+library(tidyr)
+df <- read.csv("dataset12.csv")
+```
+
+
+
+ar = aroma,
+
+fl = flavor,
+
+ac = acidity,
+
+ctd = category_two_defects,
+
+amm = altitude_mean_meters,
+
+ha = harvested,
+
+Ql = Qualityclass,
+
+coo = country_of_origin )
+
+```{r renamed and changed type}
+
+#| echo: false
+str(df)
+
+df <- df %>%
+  rename(
+    ar = aroma,
+    fl = flavor,
+    ac = acidity,
+    ctd = category_two_defects,
+    amm = altitude_mean_meters,
+    ha = harvested,
+    Ql = Qualityclass,
+    coo = country_of_origin
+  )
+
+# Convert Ql to binary factor
+df <- df %>%
+  mutate(
+    Ql = factor(Ql, levels = c("Good", "Poor"), labels = c(1, 0))
+  )
+# Print the processed data frame
+print(df)
+
+# Explore data types (optional)
+sapply(df, typeof) 
+
+```
+
+```{r}
+#summary
+sapply(df, typeof)
+
+# Calculate summary data for non-character variables
+summary_data <- df %>%
+  select_if(~ !is.character(.)) %>%  # Select only non-character columns
+  summary()
+
+print(summary_data)
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+#data after cleaning
+
+```{r}
+#cleaning data
+df <- df %>%
+  filter(!is.na(Ql), !is.na(coo))
+
+# Replace NAs with variable medians (excluding character columns and Ql)
+df <- df %>%
+  mutate(across(where(is.numeric) & !c(Ql), ~ replace(.x, is.na(.x), median(.x, na.rm = TRUE)))) %>%
+  mutate(across(where(is.logical) & !c(Ql), ~ replace(.x, is.na(.x), median(.x, na.rm = TRUE))))  # Handling logical columns separately
+
+# Print the data frame with processed NA values
+print(df)
+```
