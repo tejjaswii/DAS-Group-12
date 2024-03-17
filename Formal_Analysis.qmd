@@ -700,6 +700,10 @@ p1<-autoplot(model1)
 p2<-autoplot(model2)
 
 p3<-autoplot(model3)
+
+p1
+p2
+p3
 ```
 
 Residuals vs Fitted: @fig-assumptions_models is checking for non-linearity and equal variance of errors. The curved blue line suggests possible non-linearity. The residuals don't appear to be randomly scattered around the horizontal axis, which might indicate heteroscedasticity this could be be due to a small sample size with many outliers.
