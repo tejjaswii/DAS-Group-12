@@ -24,9 +24,9 @@ The `Qualityclass` serves as the response variable, with a binary outcome indica
 
 ## Repository Structure
 - `dataset12.csv`: This contains the datasets used in the analysis.
-- `Data_Cleaning.qmd`: This contains the R script for the Data Cleaning.
-- `Exploratory_Analysis.qmd`: This contains the R scripts for the Exploratory Analysis.
-- `Formal_Analysis.qmd`: This contains the R scripts for the GLM analysis.
+- `Data Cleaning Branch`: This contains the R script for the Data Cleaning.
+- `Exploratory Analysis Branch`: This contains the R scripts for the Exploratory Analysis.
+- `Formal Analysis Branch`: This contains the R scripts for the GLM analysis.
 - `README.md`: Provides an overview and instructions for this repository.
 
 ## Getting Started
