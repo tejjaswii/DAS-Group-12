@@ -1,0 +1,719 @@
+---
+title: "Data Analysis Skills: Analysis of Coffee Quality"
+author: "Group-12: Tejaswi, Xinjing LI, Xinran Chang, Yalin LIANG, Yousef Mohammed"
+number-sections: true
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+  pdf: default
+editor_options: 
+  chunk_output_type: console
+execute:
+  echo: true
+  eval: true
+  warning: false
+  message: false
+---
+
+# Formal Analysis: Logistic Regression Model {#sec-fa}
+
+```{r}
+#Importing libraries
+library(dplyr)
+library(ggplot2)
+library(moderndive)
+library(ggfortify)
+library(gt)
+library(sjPlot)
+library(gridExtra)
+library(gtsummary)
+
+#Reading data in R
+coffee<-read.csv("coffee.csv")
+
+#Coding the Quality class to get desirable results
+coffee$Qualityclass<-factor(coffee$Qualityclass,levels=c("Poor","Good"))
+```
+
+For the given task of investigating the influence of different features of coffee on the quality classification (good or poor) of a batch of coffee, a logistic regression model using a Generalized Linear Model (GLM) framework would be the most appropriate choice. Hence, to formally analyse the observations made in Exploratory Data Analysis we fit logistic regression model to our coffee quality dataset. In @sec-fa you will find a comparsion between various models of interest to find the best fitting model.
+
+```{r}
+#| label: fig-edaplots
+#| fig-cap: Exploraory plot of variables of interest
+
+#Aroma and Qualityclass
+p1<-ggplot(data = coffee, aes(x = Qualityclass, y = aroma, fill = Qualityclass)) +
+  geom_boxplot()+
+  labs(x = "Coffee Quality", y = "Aroma")+
+  theme(legend.position = "none")
+
+#Flavor and Qualityclass
+p2<-ggplot(data = coffee, aes(x = Qualityclass, y = flavor, fill = Qualityclass))+
+  geom_boxplot()+
+  labs(x = "Coffee Quality", y = "Flavor")+
+  theme(legend.position = "none")
+
+#Acidity and Qualityclass
+p3<-ggplot(data = coffee, aes(x = Qualityclass, y = acidity, fill = Qualityclass))+
+  geom_boxplot()+
+  labs(x = "Coffee Quality", y = "Acidity")+
+  theme(legend.position = "none")
+
+#Altitude and Qualityclass
+p4<-ggplot(data = coffee, aes(x = Qualityclass, y = altitude_mean_meters, fill = Qualityclass))+
+  geom_boxplot()+
+  labs(x = "Coffee Quality", y = "Altitude")+
+  theme(legend.position = "none")
+
+grid.arrange(p1,p2,p3,p4,ncol=2)
+
+```
+
+Almost all the boxplots in @fig-edaplots, show that coffee with higher aroma, flavor, acidity and altitude is from
+the class of Good quality as compared to those with lower aroma, flavor, acidity and altitude.
+Altitude shows a lot of outliers, however, given the small sample size removing outliers could
+be risky.
+
+Finally given the information, we move on to fitting the following glm models:
+
+```{r}
+#Model 1 (Saturated Model)
+model1<-glm(Qualityclass~country_of_origin+aroma+flavor+acidity
+            +category_two_defects+altitude_mean_meters+harvested,data=coffee,
+            family=binomial(link="logit"))
+
+#Summary of model 1
+model1%>%
+summary()
+
+```
+
+Model 1:
+
+$\ln\left(\frac{p}{1-p}\right) = \alpha +\sum\beta_{\mbox{Country}} \cdot\mathbb{I}_{\mbox{Country}}(i)+\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity}+\beta_{\mbox{defects}} \cdot\ x_{defects}+\beta_{\mbox{altitude}} \cdot\ x_{altitude}+\beta_{\mbox{harvested}} \cdot\ x_{harvested}+\epsilon_i$
+
+where p=Prob(Good) and 1−p=Prob(Poor)
+
+$$\mathbb{I}_{\mbox{Country}}(x)$$ is an indicator function of the format:
+
+$$\mathbb{I}_{\mbox{Country}}(x)=\left\{
+           \begin{array}{ll}
+            1~~~ \mbox{if country of}~x\mbox{th observation is Country},\\
+            0~~~ \mbox{Brazil}\\
+           \end{array}
+          \right.$$
+
+
+```{r}
+#Now we look at the levels to determine baseline category
+levels(coffee$Qualityclass)
+
+#Checking the data type of country_of_origin
+class(coffee$country_of_origin)
+
+#If it's not a factor, converting it to a factor
+coffee$country_of_origin <- factor(coffee$country_of_origin)
+
+#Now we look at the levels to determine baseline categor
+levels(coffee$country_of_origin)
+
+```
+
+To interpret the fitted model 1, firstly we note that the baseline category for our binary
+response is Poor. This is due to the default baseline in R being taken as the one which comes
+first on applying the levels function to the variable, which can be seen from the levels function
+above as Poor.
+
+This implies that estimates from the logistic regression model are for a change on the log-odds
+scale for coffee of Good quality in comparison to the response baseline Poor. Similarly, our
+categorical explanatory variable country_of_origin has Brazil as its baseline. We are now
+interested in extracting the estimated coefficients.
+
+
+```{r}
+#Extracting model coefficitents
+model1coefs <- round(coef(model1), 2)
+model1coefs
+```
+
+We observe that log-odds of origin countries like Columbia with a significant positive coefficient
+have higher log-odds of being classified as Good as compared to Brazil. Similarly, India with
+a significant negative coefficient has lower log-odds of being classified as Good as compared
+to Brazil. Other significant origin country variables (Burundi, Panama, United Republic Of Tanzania and United States (Puerto Rico)) can be interpreted in a similar manner, keeping other variables constant.
+
+We also observe that aroma, flavor and acidity are the variables which explain significant
+difference in coffee being classified as Good or Poor (p-value less than 5%). The higher aroma
+score, flavor score and acidity score individually, given their positive coefficients have higher
+log-odds of being classified as good.
+
+For aroma, the log-odds is 4.077, meaning a unit increase in the aroma score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 4.077. In
+other words, as the aroma score increases, the likelihood of the coffee batch being classified as
+“Good” also increases.
+
+For flavor, the log-odds is 8.275, meaning a unit increase in the flavor score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 8.275, that
+is the likelihood of the coffee batch being classified as “Good” also increases.
+
+For acidity, the log-odds is 3.588, meaning a unit increase in the acidity score is associated
+with an increase in the log-odds of the response variable being classified as “Good” by 3.588,
+meaning the likelihood of the coffee batch being classified as “Good” also increases.
+
+It is also observed in the model that variables, category two defects, mean altitude and harvest
+years are insignificant in the model but this could be due to presence of outliers in a small
+sample size as well.
+
+95% confidence interval of log-odds are displayed as follows:
+
+```{r}
+#Extracting confidence intervals of model 1 parameters
+confint(model1)
+```
+
+95% Confidence intervals for log-odds, as they do not contain zero, indicate the same results
+as the p-value analysis earlier. This has also been visualised in the plot below:
+
+```{r}
+#| label: fig-logodds_model1
+#| fig-cap: 95% Confidence Interval for Log-Odds (Good Coffee Quality)
+
+#Plotting confidence intervals of log-odds
+plot_model(model1, show.values = TRUE, transform = NULL,
+           title = "Log-Odds (Good Coffee Quality)",
+           show.p = FALSE)
+```
+
+Now, we add the estimates of the log-odds to our data set:
+
+```{r}
+#Adding the log-odds to the data
+coffee.model1 <- coffee
+
+coffee.model1<-coffee.model1%>%
+mutate('logodds.good'=predict(model1))
+
+```
+
+Usually we are interested in working on the odds scale as it is easier to interpret an odds-ratio
+as opposed to the log-odds-ratio. To obtain the odds we simply exponentiate the log-odds,
+that is
+
+$\ln\left(\frac{p}{1-p}\right) = \exp(\alpha +\sum\beta_{\mbox{Country}} \cdot\mathbb{I}_{\mbox{Country}}(i)+\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity}+\beta_{\mbox{defects}} \cdot\ x_{defects}+\beta_{\mbox{altitude}} \cdot\ x_{altitude}+\beta_{\mbox{harvested}} \cdot\ x_{harvested})$
+
+```{r}
+#Odds ratio for the model
+model1 %>%
+coef() %>%
+exp()
+```
+
+Now according to the odds ratios obtained, Columbia has an odds of 5.75, it means that the
+odds of having a Good quality coffee, in comparison to poor, from Columbia are 5.75 times
+higher compared to baseline Brazil, keeping other variables constant. All other country dummy
+variables can be interpreted similarly, with insignificant variables indicating no significant
+difference.
+
+For aroma, we have odds of 58.95, which indicates that for every 1 unit increase in aroma
+score, the odds of the coffee being Good in comparison to Poor increase by a factor of 58.95.
+
+For flavor we have odds of 3925.843, indicating that for every 1 unit increase in flavor score,
+the odds of the coffee being Good in comparison to Poor increase by a factor of 3925.843
+
+Similarly, for acidity we have odds of 36.15, which indicates that for every 1 unit increase in
+acidity score, the odds of the coffee being Good in comparison to Poor increase by a factor of
+36.15.
+
+All other variables are mostly insignificant.
+
+95% confidence interval for the odds ratios can be observed in the following figure:
+
+```{r}
+#| label: fig-odds_model1
+#| fig-cap: 95% Confidence Interval for Odds (Good Coffee Quality)
+
+#Visualising 95% confidence intervals for odds ratios
+plot_model(model1, show.values = TRUE, axis.lim = c(1,1.5),
+           title = "Odds(Good Coffee Quality)",show.p=FALSE)
+```
+
+Now, let’s add the estimates of the odds to our data set:
+
+```{r}
+#Adding the odds ratio to the data
+coffee.model1 <- coffee.model1%>%
+  mutate('odds.good' = exp(logodds.good))
+```
+
+We can now obtain the probability p=Prob(Good) using the following transformation:
+
+$$\begin{equation}
+\ln \left( \frac{p}{1 - p} \right) = \frac{\exp(\alpha + \beta_i \cdot x_i)}{1 + \exp(\alpha + \beta_i \cdot x_i)}
+\end{equation}$$
+
+where, i is the variable name.
+
+We further estimate the probability and add it to the model:
+
+```{r}
+#Adding probabilties to data
+coffee.model1 <- coffee.model1 %>%
+  mutate('probs.good' = fitted(model1))
+
+```
+
+Finally, we can plot the probability of coffee being Good as follows:
+
+```{r}
+#| label: fig-probs_model1
+#| fig-cap: Probability of Good Coffee Quality
+
+p1<-ggplot(data = coffee.model1, aes(x = aroma, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Aroma", y = "Probability of Good Quality coffee")
+
+p2<-ggplot(data = coffee.model1, aes(x = flavor, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Flavor", y = "Probability of Good Quality coffee")
+
+p3<-ggplot(data = coffee.model1, aes(x = acidity, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Acidity", y = "Probability of Good Quality coffee")
+
+grid.arrange(p1,p2,p3,ncol=3)
+
+```
+
+After making all these observations from the fitted model 1, we observe that the AIC is 639.72
+and Residual Deviance is 557.72. These values though high should be compared with other
+models to get the best model given the data.
+
+To fit another model 2, we will be focussing on the variable country_of_origin, aroma, flavor
+and acidity. We have here removed the variable that were insignificant in the previous model
+1.
+
+```{r}
+#Model 2
+model2<-glm(Qualityclass~country_of_origin+aroma+flavor+acidity,data=coffee,
+        family=binomial(link="logit"))
+
+#Summary of model 2 
+model2%>%
+  summary()
+
+```
+
+Model 2:
+
+$\ln\left(\frac{p}{1-p}\right) = \alpha +\sum\beta_{\mbox{Country}} \cdot\mathbb{I}_{\mbox{Country}}(i)+\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity}+\epsilon_i$
+
+where p=Prob(Good) and 1−p=Prob(Poor)
+
+$$\mathbb{I}_{\mbox{Country}}(x)$$ is an indicator function of the format:
+
+$$\mathbb{I}_{\mbox{Country}}(x)=\left\{
+           \begin{array}{ll}
+            1~~~ \mbox{if country of}~x\mbox{th observation is Country},\\
+            0~~~ \mbox{Brazil}\\
+           \end{array}
+          \right.$$
+
+We now extract the estimated coefficients from the model:
+
+```{r}
+#Extracting estimated log-odds coefficients
+model2coefs_logodd<-round(coef(model2),2)
+model2coefs_logodd
+```
+
+We observe that log-odds of origin countries like, again, Columbia with a significant positive
+coefficient have higher log-odds of being classified as Good relative to Poor as compared to
+baseline Brazil. Similarly, India with a significant negative coefficient has lower log-odds of
+being classified as Good relative to Poor as compared to Brazil. Other significant origin
+country variables (Burundi, Columbia, United Republic Of Tanzania, Thailand and United
+States (Puerto Rico)) can be interpreted in a similar manner, keeping other variables constant.
+These observations are very similar to those observed in model 1. However, we observe slight
+differences in values of numerical variables in model 2.
+
+We observe that aroma, flavor and acidity are the variables which explain significant difference
+in coffee being classified as Good or Poor (p-value less than 5%).
+
+The higher aroma score, flavor score and acidity score individually, given their positive coefficients have higher log-odds of being classified as Good. It is also observed in the model
+that variables, category two defects, mean altitude and harvest years that were insignificant
+in model 1 have been removed from this model in stepwise regression. However, it should be
+noted that their insignificance could be due to the presence of many outliers in a small sample
+size.
+
+For aroma, the log-odds is 4.01, meaning a unit increase in the aroma score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 4.01. In
+other words, as the aroma score increases, the likelihood of the coffee batch being classified as
+“Good” also increases.
+
+For flavor, the log-odds is 8.25, meaning a unit increase in the flavor score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 8.25, that is
+the likelihood of the coffee batch being classified as “Good” also increases.
+
+For acidity, the log-odds is 3.57, meaning a unit increase in the acidity score is associated
+with an increase in the log-odds of the response variable being classified as “Good” by 3.57,
+meaning the likelihood of the coffee batch being classified as “Good” also increases.
+
+95% confidence interval of log-odds are displayed as follows:
+
+```{r}
+#Extracting confidence intervals of model 2 parameters
+confint(model2)
+
+```
+
+95% Confidence intervals for log-odds, as they do not contain zero, indicate the same results
+as the p-value analysis earlier. This has also been visualised in the plot below:
+
+```{r}
+#| label: fig-logodds_model2
+#| fig-cap: 95% Confidence Interval for Log-Odds (Good Coffee Quality)
+
+#Plotting confidence intervals of log-odds
+plot_model(model2, show.values = TRUE, transform = NULL,
+           title = "Log-Odds (Good Coffee Quality)",
+           show.p = FALSE)
+
+```
+
+Now, we add the estimates of the log-odds to our data set:
+
+```{r}
+#Adding the log-odds to the data
+coffee.model2 <- coffee
+coffee.model2<-coffee.model2%>%
+mutate('logodds.good'=predict(model2))
+```
+
+Usually, we are interested in working on the odds scale as it is easier to interpret an odds-ratio
+as opposed to the log-odds-ratio. To obtain the odds we simply exponentiate the log-odds,
+that is
+
+$\ln\left(\frac{p}{1-p}\right) = \exp(\alpha +\sum\beta_{\mbox{Country}} \cdot\mathbb{I}_{\mbox{Country}}(i)+\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity})$
+
+```{r}
+#Odds ratio for model 2
+model2 %>%
+coef() %>%
+exp()
+
+```
+
+Now according to the odds ratios obtained, Columbia has an odds ratio of 5.72, it means that
+the odds of having a Good quality coffee, in comparison to poor, from Columbia are 5.72 times
+higher compared to baseline Brazil, keeping other variables constant. This value is not very
+different from the one obtained from model 1. All other country dummy variables can be
+interpreted in a similar manner, with insignificant variables indicating no significant difference
+from the Brazil.
+
+For aroma, we have odds of 55.08, which indicates that for every 1 unit increase in aroma
+score, the odds of the coffee being Good in comparison to Poor increase by a factor of 55.08.
+
+For flavor we have odds of 3846.51, indicating that for every 1 unit increase in flavor score, the
+odds of the coffee being Good in comparison to Poor increase by a factor of 3846.51.
+
+Similarly, for acidity we have odds of 35.51, which indicates that for every 1 unit increase in
+acidity score, the odds of the coffee being Good in comparison to Poor increase by a factor of
+35.51.
+
+95% confidence interval for the odds ratios can be observed in the following figure:
+
+```{r}
+#| label: fig-odds_model2
+#| fig-cap: 95% Confidence Interval for Odds (Good Coffee Quality)
+
+#Visualising 95% confidence intervals for odds ratios
+plot_model(model2, show.values = TRUE, axis.lim =c(1,1.5),
+           title = "Odds(Good Coffee Quality)",show.p=FALSE)
+```
+
+Now, let’s add the estimates of the odds to our data set:
+
+```{r}
+#Adding the odds ratio to the data
+coffee.model2 <- coffee.model2 %>%
+mutate('odds.good' = exp(logodds.good))
+```
+
+We now obtain the probability p=Prob(Good) using the following transformation:
+
+$$\begin{equation}
+\ln \left( \frac{p}{1 - p} \right) = \frac{\exp(\alpha + \beta_i \cdot x_i)}{1 + \exp(\alpha + \beta_i \cdot x_i)}
+\end{equation}$$
+
+where, i is the variable name.
+
+We further estimate the probability and add it to the model:
+
+```{r}
+#Adding probabilities to the model
+coffee.model2 <- coffee.model2 %>%
+mutate('probs.good' = fitted(model2))
+
+```
+
+Finally, we can plot the probability of coffee being Good as follows:
+
+```{r}
+#| label: fig-probs_model2
+#| fig-cap: Probability of Good Coffee Quality
+
+p1<-ggplot(data = coffee.model2, aes(x = aroma, y = probs.good))+
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE)+
+  labs(x = "Aroma", y = "Probability of Good Quality coffee")
+
+p2<-ggplot(data = coffee.model2, aes(x = flavor, y = probs.good))+
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Flavor", y = "Probability of Good Quality coffee")
+
+p3<-ggplot(data = coffee.model2, aes(x = acidity, y = probs.good))+
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Acidity", y = "Probability of Good Quality coffee")
+
+grid.arrange(p1,p2,p3,ncol=3)
+
+```
+
+After making all these observations from the fitted model 2, we observe that the AIC is 637.88
+and Residual Deviance is 561.88. These implies that the AIC has gone down as compared to
+model 1. The Residual Deviance is however, slightly up but not much as to be of concern.
+
+Given this we can say that model 2 with more of significant variables AND lower AIC is a
+better model. However, it would be better if we also perform deviance test before making
+conclusions.
+
+```{r}
+#| label: tbl-deviance
+#| tbl-cap: Ananlysis of Deviance Table for Model 1 and Model 2
+
+#Deviance Test to find a better model between model 1 and model 2
+deviance_test <- anova(model1,model2, test = "Chi")
+
+#Designing table to visualise the results
+deviance_test |>
+  gt() |>
+  fmt_number(decimals=2)
+
+```
+
+In the @tbl-deviance, Model 2 (with reduced variables) has a slightly
+higher residual deviance compared to Model 1 (saturated model), but the difference is not
+statistically significant, based on the p-value of 0.25 being greater than 0.05. Additionally,
+Model 2 is simpler as it excludes some insignificant features present in Model 1.
+
+Therfore given less insignificant variables, lower AIC and results from Analysis of Deviance
+Table compared to model 1, model 2 can be considered a better, also due to its simplicity
+without sacrificing much in terms of model fit.
+
+However, just to be sure, we fit another model (model 3) with even fewer variables by removing
+the country of origin variable. Thus, to fit model 3, we will be focusing on the variables aroma,
+flavor and acidity.
+
+```{r}
+#Model 3
+model3<-glm(Qualityclass~aroma+flavor+acidity,data=coffee,
+        family=binomial(link="logit"))
+
+#Summary of model 3 
+model3%>%
+  summary()
+
+```
+
+Model 3:
+
+$\ln\left(\frac{p}{1-p}\right) = \alpha +\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity}+\epsilon_i$
+
+where p=Prob(Good) and 1−p=Prob(Poor)
+
+We now extract the estimated coefficients from the model:
+
+```{r}
+#Extracting log-odds for model 3 coefficients
+model3coefs_logodd<-round(coef(model3),2)
+model3coefs_logodd
+```
+
+We observe some differences in values of numerical variables from model 1 and 2 in model 3.
+
+We also observe that all the variables in model like aroma, flavor and acidity are the variables
+which explain significant difference in coffee being classified as Good or Poor (p-value less than
+5%). The higher aroma score, flavor score and acidity score individually, given their positive
+coefficients have higher log-odds of being classified as Good.
+
+For aroma, the log-odds is 4.29, meaning a unit increase in the aroma score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 4.29. In
+other words, as the aroma score increases, the likelihood of the coffee batch being classified as
+“Good” also increases.
+
+For flavor, the log-odds is 7.12, meaning a unit increase in the flavor score is associated with
+an increase in the log-odds of the response variable being classified as “Good” by 7.12, that is
+the likelihood of the coffee batch being classified as “Good” also increases.
+
+For acidity, the log-odds is 3.16, meaning a unit increase in the acidity score is associated
+with an increase in the log-odds of the response variable being classified as “Good” by 3.16,
+meaning the likelihood of the coffee batch being classified as “Good” also increases.
+
+95% confidence interval of log-odds are displayed as follows:
+
+```{r}
+#Extracting confidence intervals of model 3 parameters
+confint(model3)
+```
+
+95% Confidence intervals for log-odds, as they do not contain zero, indicate the same results
+as the p-value analysis earlier. This has also been visualised in the plot below:
+
+```{r}
+#| label: fig-logodds_model3
+#| fig-cap: 95% Confidence Interval for Log-Odds (Good Coffee Quality)
+
+#Plotting confidence intervals of log-odds
+plot_model(model3, show.values = TRUE, transform = NULL,
+           title = "Log-Odds (Good Coffee Quality)",show.p = FALSE)
+```
+
+Now, we add the estimates of the log-odds to our data set:
+
+```{r}
+#Adding the log-odds to the data
+coffee.model3 <- coffee
+coffee.model3<-coffee.model3%>%
+  mutate('logodds.good'=predict(model3))
+
+```
+
+Usually, we are interested in working on the odds scale as it is easier to interpret an odds-ratio
+as opposed to the log-odds-ratio. To obtain the odds we simply exponentiate the log-odds,
+that is
+
+$\ln\left(\frac{p}{1-p}\right) = \exp(\alpha +\beta_{\mbox{aroma}} \cdot\ x_{aroma}+\beta_{\mbox{flavor}} \cdot\ x_{flavor}+\beta_{\mbox{acidity}} \cdot\ x_{acidity})$
+
+```{r}
+#Odds ratio for model 3
+model3 %>%
+coef() %>%
+exp()
+
+```
+
+Now according to the odds ratios obtained for aroma, we have odds of 72.65, which indicates
+that for every 1 unit increase in aroma score, the odds of the coffee being Good in comparison
+to Poor increases by a factor of 72.65
+
+For flavor we have odds of 1233.43, indicating that for every 1 unit increase in flavor score, the
+odds of the coffee being Good in comparison to Poor increase by a factor of 1233.43
+
+Similarly, for acidity we have odds 23.58, which indicates that for every 1 unit increase in
+acidity score, the odds of the coffee being Good in comparison to Poor increase by a factor of
+23.58
+
+95% confidence interval for the odds ratios can be observed in the following figure:
+
+```{r}
+#| label: fig-odds_model3
+#| fig-cap: 95% Confidence Interval for Odds (Good Coffee Quality)
+
+#Visualising 95% confidence intervals for odds ratios
+plot_model(model3, show.values = TRUE, axis.lim = c(1,1.5),
+           title = "Odds(Good Coffee Quality)",show.p=FALSE)
+
+```
+
+Now, let’s add the estimates of the odds to our data set:
+
+```{r}
+#Adding the odds ratio to the data
+coffee.model3 <- coffee.model3 %>%
+  mutate('odds.good' = exp(logodds.good))
+
+```
+
+We now obtain the probability p=Prob(Good) using the following transformation:
+
+$$\begin{equation}
+\ln \left( \frac{p}{1 - p} \right) = \frac{\exp(\alpha + \beta_i \cdot x_i)}{1 + \exp(\alpha + \beta_i \cdot x_i)}
+\end{equation}$$
+
+where, i is the variable name.
+
+We further estimate the probability and add it to the model:
+
+```{r}
+#Adding probabilties to the data
+coffee.model3 <- coffee.model3 %>%
+  mutate('probs.good' = fitted(model3))
+```
+
+Finally, we can plot the probability of coffee being Good as follows:
+
+```{r}
+#| label: fig-probs_model3
+#| fig-cap: Probability for Good Coffee Quality
+
+p1<-ggplot(data = coffee.model3, aes(x = aroma, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+labs(x = "Aroma", y = "Probability of Good Quality coffee")
+
+p2<-ggplot(data = coffee.model3, aes(x = flavor, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Flavor", y = "Probability of Good Quality coffee")
+
+p3<-ggplot(data = coffee.model3, aes(x = acidity, y = probs.good)) +
+  geom_smooth(method="glm",method.args = list(family="binomial"),se = FALSE) +
+  labs(x = "Acidity", y = "Probability of Good Quality coffee")
+
+grid.arrange(p1,p2,p3,ncol=3)
+```
+
+After making all these observations from the fitted model 3, we observe that the AIC is 649.507
+and Residual Deviance is 641.507. These implies that the AIC has gone up as compared to
+model 1 and model 2. The Residual Deviance has also gone up compared to model 2.
+
+Given this we can say that model 2 with more of significant variables, lower AIC and lower
+BIC than model 2 is a better model.
+
+We can also look at the output from step function to validate the results obtained from our
+stepwise regression for model selection.
+
+```{r}
+#Checking the selected model
+best_model<-step(model1)
+best_model
+```
+
+Hence, we observe that step AIC also gives us the result that model 2 with predictors country_of_origin, aroma, flavor and acidity is the best fitted model which aligns with our analysis
+above.
+
+# Limitations
+
+```{r}
+#| label: fig-assumptions_models
+#| fig-cap: Diagnostic Plots for all three models under considerations
+
+#Assessing model fit
+p1<-autoplot(model1)
+
+p2<-autoplot(model2)
+
+p3<-autoplot(model3)
+
+p1
+p2
+p3
+```
+
+Residuals vs Fitted: @fig-assumptions_models is checking for non-linearity and equal variance of errors. The curved blue line suggests possible non-linearity. The residuals don't appear to be randomly scattered around the horizontal axis, which might indicate heteroscedasticity this could be be due to a small sample size with many outliers.
+
+Normal Q-Q: This plot is for checking the normality of errors. Since GLMs can use different distributions for the response variable, this plot might not be directly applicable as GLMs assume non-normal distributions.
+
+Scale-Location: Also checks for equal variance of errors (homoscedasticity). The increase in spread as the fitted values increase indicates potential heteroscedasticity.
+
+Residuals vs Leverage: This plot identifies influential points. The points that stand out could be having a significant impact on the model. This indicates that some outliers maybe affecting the model. However, given the small sample size, removing outliers can be risky and hence a larges sample size could help better in understanding the results.
+
+# Future Extensions
+
+Further investigation and possibly examining model adjustments in depth are warranted. Potential steps could include transforming variables, adding interaction terms, or considering other modelling techniques.
