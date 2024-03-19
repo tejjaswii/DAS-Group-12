@@ -21,9 +21,9 @@ The analysis focuses on the following attributes for each coffee batch:
 After completing data cleaning, we conducted exploratory data analysis (EDA) and then used generalized linear models (GLM) to analyze the impact of various factors on coffee quality. The Qualityclass serves as the response variable, with a binary outcome indicating whether the quality of coffee is good or poor.
 
 ## Repository Structure
-- **/data**: This directory contains the datasets used in the analysis.
-- **/scripts**: This directory contains the R scripts for the GLM analysis.
-- **/results**: This directory will store the output of the analyses, including figures and tables.
+- **dataset12.csv**: This directory contains the datasets used in the analysis.
+- **Formal_Analysis.qmd**: This directory contains the R scripts for the GLM analysis.
+- **Plots**: This directory will store the output of the analyses, including figures and tables.
 - **README.md**: Provides an overview and instructions for this repository.
 
 ## Getting Started
